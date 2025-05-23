@@ -35,7 +35,6 @@ def generate_processes(n=5, max_arrival=10, min_burst=1, max_burst=10, overlap=T
     """
     if seed is not None:
         random.seed(seed)
-        
     if overlap:
         # Generate arrival times clustered to create overlapping processes
         arrival_times = [random.randint(0, max_arrival // 2) for _ in range(n)]

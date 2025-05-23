@@ -64,7 +64,7 @@ class CPUcore:
 
         if time >= max_time:
             print(f"Simulation terminated: Time limit exceeded after {time} units.")
-            
+        
         return timeline
 
 
@@ -96,7 +96,6 @@ class MultiCoreCPU:
         for idx, process in enumerate(processes):
             core_id = idx % len(self.cores)
             core_process_lists[core_id].append(process)
-
         timelines = []
         for core, core_processes in zip(self.cores, core_process_lists):
             timeline = core.run(core_processes)
