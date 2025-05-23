@@ -675,3 +675,36 @@ def plot_gantt_chart(timelines, title="Gantt Chart"):
     )
     
     return fig
+
+
+def plot_performance_comparison_bar(aggregate_data, title="Performance Comparison"):
+    """
+    Create a grouped bar chart comparing average waiting and turnaround times for each configuration.
+    Args:
+        aggregate_data: List of dicts with keys 'Configuration', 'Avg Waiting Time', 'Avg Turnaround Time', etc.
+        title: Chart title
+    Returns:
+        Plotly figure object
+    """
+    fig = go.Figure()
+    # Add waiting time
+    fig.add_trace(go.Bar(
+        x=[data["Configuration"] for data in aggregate_data],
+        y=[float(data["Avg Waiting Time"]) for data in aggregate_data],
+        name="Avg Waiting Time"
+    ))
+    # Add turnaround time
+    fig.add_trace(go.Bar(
+        x=[data["Configuration"] for data in aggregate_data],
+        y=[float(data["Avg Turnaround Time"]) for data in aggregate_data],
+        name="Avg Turnaround Time"
+    ))
+    # Update layout
+    fig.update_layout(
+        title=title,
+        xaxis_title="Configuration", 
+        yaxis_title="Time",
+        barmode="group",
+        height=400
+    )
+    return fig

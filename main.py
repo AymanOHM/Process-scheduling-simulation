@@ -3,7 +3,7 @@ from schedulers.rr import RoundRobin
 from schedulers.sjf import SJF  # Import our new scheduler
 from cpu import MultiCoreCPU
 from stats import compute_stats
-from visualizer import plot_aggregate_stats, plot_gantt_chart, plot_input_processes, plot_process_timeline
+from visualizer import plot_aggregate_stats, plot_gantt_chart, plot_input_processes, plot_process_timeline, plot_performance_comparison_bar
 from process_gen import generate_processes, Process, generate_test_processes
 import dash
 from dash import dcc, html
@@ -11,6 +11,8 @@ from dash import dash_table
 import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
 import copy
+from layout import get_app_layout, colors, card_style
+from layout import get_result_components
 
 # Create Dash app with external stylesheets
 external_stylesheets = [
@@ -26,27 +28,8 @@ app = dash.Dash(
     assets_folder='assets'  # Explicitly set assets folder
 )
 
-# Define custom styles
-colors = {
-    'background': '#f9fcff',
-    'panel': '#ffffff',
-    'primary': '#1e88e5',
-    'secondary': '#7cb342',
-    'accent': '#ff6d00',
-    'text': '#37474f',
-    'light-text': '#78909c',
-    'header': '#0d47a1',
-    'border': '#e1e5ea'
-}
-
-# Common component styles
-card_style = {
-    'backgroundColor': colors['panel'],
-    'borderRadius': '8px',
-    'boxShadow': '0 2px 10px rgba(0, 0, 0, 0.05)',
-    'padding': '20px',
-    'marginBottom': '20px',
-}
+# Layout
+app.layout = get_app_layout()
 
 # Generate different process sets for comparison
 def generate_process_sets(min_burst=1, max_burst=10, random_seed=42):
@@ -74,228 +57,6 @@ def generate_process_sets(min_burst=1, max_burst=10, random_seed=42):
         "medium": medium_processes,
         "large": large_processes
     }
-
-# Layout
-app.layout = html.Div([
-    # Header
-    html.Div([
-        html.H1("Process Scheduling Simulation", className="app-header"),
-    ], style={
-        'backgroundColor': colors['header'],
-        'color': 'white',
-        'padding': '20px 0',
-        'textAlign': 'center',
-        'borderRadius': '8px',
-        'marginBottom': '20px',
-        'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
-    }),
-    
-    # Main container with sidebar and content
-    html.Div([
-        # Controls - Left sidebar
-        html.Div([
-            html.Div([
-                html.H3("Simulation Parameters", style={
-                    'color': colors['header'],
-                    'borderBottom': f'2px solid {colors["border"]}',
-                    'paddingBottom': '10px',
-                    'marginBottom': '20px'
-                }),
-                
-                # Process set selector
-                html.Div([
-                    html.Label("Process Set:", style={'fontWeight': 'bold', 'marginBottom': '8px'}),
-                    dcc.RadioItems(
-                        id="process-set-size",
-                        options=[
-                            {"label": "Fixed Test Set (5 processes)", "value": "fixed"},
-                            {"label": "Small (5 processes)", "value": "small"},
-                            {"label": "Medium (8 processes)", "value": "medium"},
-                            {"label": "Large (12 processes)", "value": "large"}
-                        ],
-                        value="fixed",
-                        className="radio-group",
-                        inputStyle={"marginRight": "8px"},
-                        labelStyle={"display": "flex", "alignItems": "center", "marginBottom": "12px", "cursor": "pointer"}
-                    )
-                ], style={'marginBottom': '20px'}),
-                
-                # Algorithm selector
-                html.Div([
-                    html.Label("Scheduling Algorithms:", style={'fontWeight': 'bold', 'marginBottom': '8px'}),
-                    dcc.Checklist(
-                        id="algorithms",
-                        options=[
-                            {"label": "First-Come-First-Served (FCFS)", "value": "fcfs"},
-                            {"label": "Round Robin (RR)", "value": "rr"},
-                            {"label": "Shortest Job First (SJF)", "value": "sjf"}
-                        ],
-                        value=["fcfs", "rr", "sjf"],
-                        className="checklist",
-                        inputStyle={"marginRight": "8px"},
-                        labelStyle={"display": "flex", "alignItems": "center", "marginBottom": "12px", "cursor": "pointer"}
-                    )
-                ], style={'marginBottom': '20px'}),
-                
-                # Cores selector
-                html.Div([
-                    html.Label("Number of Cores:", style={'fontWeight': 'bold', 'marginBottom': '8px'}),
-                    dcc.Checklist(
-                        id="cores",
-                        options=[
-                            {"label": "1 Core", "value": 1},
-                            {"label": "2 Cores", "value": 2},
-                            {"label": "4 Cores", "value": 4}
-                        ],
-                        value=[1, 2],
-                        className="checklist",
-                        inputStyle={"marginRight": "8px"},
-                        labelStyle={"display": "flex", "alignItems": "center", "marginBottom": "12px", "cursor": "pointer"}
-                    )
-                ], style={'marginBottom': '20px'}),
-                
-                # Quantum input (for Round Robin)
-                html.Div([
-                    html.Label("Round Robin Quantum:", style={'fontWeight': 'bold', 'marginBottom': '8px'}),
-                    dcc.Input(
-                        id="quantum",
-                        type="number",
-                        min=1,
-                        max=10,
-                        step=1,
-                        value=2,
-                        style={
-                            'width': '100%',
-                            'padding': '8px',
-                            'borderRadius': '4px',
-                            'border': f'1px solid {colors["border"]}',
-                            'backgroundColor': '#f9fcff'
-                        }
-                    )
-                ], style={'marginBottom': '25px'}),
-                
-                # Min burst time input
-                html.Div([
-                    html.Label("Minimum Burst Time:", style={'fontWeight': 'bold', 'marginBottom': '8px'}),
-                    dcc.Input(
-                        id="min-burst",
-                        type="number",
-                        min=1,
-                        max=20,
-                        step=1,
-                        value=1,
-                        style={
-                            'width': '100%',
-                            'padding': '8px',
-                            'borderRadius': '4px',
-                            'border': f'1px solid {colors["border"]}',
-                            'backgroundColor': '#f9fcff'
-                        }
-                    )
-                ], style={'marginBottom': '25px'}),
-                
-                # Max burst time input
-                html.Div([
-                    html.Label("Maximum Burst Time:", style={'fontWeight': 'bold', 'marginBottom': '8px'}),
-                    dcc.Input(
-                        id="max-burst",
-                        type="number",
-                        min=2,
-                        max=30,
-                        step=1,
-                        value=10,
-                        style={
-                            'width': '100%',
-                            'padding': '8px',
-                            'borderRadius': '4px',
-                            'border': f'1px solid {colors["border"]}',
-                            'backgroundColor': '#f9fcff'
-                        }
-                    )
-                ], style={'marginBottom': '25px'}),
-                
-                # Random seed input
-                html.Div([
-                    html.Label("Random Seed:", style={'fontWeight': 'bold', 'marginBottom': '8px'}),
-                    dcc.Input(
-                        id="random-seed",
-                        type="number",
-                        min=0,
-                        step=1,
-                        value=42,
-                        style={
-                            'width': '100%',
-                            'padding': '8px',
-                            'borderRadius': '4px',
-                            'border': f'1px solid {colors["border"]}',
-                            'backgroundColor': '#f9fcff'
-                        }
-                    )
-                ], style={'marginBottom': '25px'}),
-                
-                # Run simulation button
-                html.Button(
-                    "Run Simulation", 
-                    id="run-simulation", 
-                    n_clicks=0,
-                    style={
-                        "width": "100%",
-                        "padding": "12px",
-                        "fontSize": "16px",
-                        "backgroundColor": colors["primary"],
-                        "color": "white",
-                        "border": "none",
-                        "borderRadius": "4px",
-                        "cursor": "pointer",
-                        "boxShadow": "0 2px 5px rgba(0,0,0,0.1)",
-                        "transition": "background-color 0.3s ease",
-                        ":hover": {
-                            "backgroundColor": "#1565c0"
-                        }
-                    }
-                ),
-                
-                # Status message with enhanced styling
-                html.Div(
-                    id="status-message", 
-                    style={
-                        "marginTop": "15px",
-                        "textAlign": "center",
-                        "padding": "10px",
-                        "borderRadius": "4px",
-                        "backgroundColor": "rgba(232, 245, 233, 0.8)",
-                        "color": "#2E7D32",
-                        "border": "1px solid rgba(76, 175, 80, 0.3)",
-                        "fontWeight": "500"
-                    }
-                )
-            ], className="sidebar-content", style=card_style)
-        ], className="sidebar", style={
-            'flex': '0 0 300px',
-            'marginRight': '20px'
-        }),
-        
-        # Results container (initially empty)
-        html.Div(
-            id="results-container", 
-            children=[],
-            style={
-                'flex': '1',
-                'minWidth': '0'  # Prevents flex item from overflowing
-            }
-        )
-    ], style={
-        'display': 'flex',
-        'flexWrap': 'wrap'
-    })
-], style={
-    'fontFamily': '"Roboto", sans-serif',
-    'backgroundColor': colors['background'],
-    'color': colors['text'],
-    'padding': '20px',
-    'maxWidth': '1400px',
-    'margin': '0 auto'
-})
 
 # Callback to run simulation and display results
 @app.callback(
@@ -440,172 +201,14 @@ def run_and_display_simulation(n_clicks, process_set_size, algorithms, cores, qu
     ]
 
     # Create bar chart for statistics comparison
-    bar_fig = go.Figure()
-    
-    # Add waiting time
-    bar_fig.add_trace(go.Bar(
-        x=[data["Configuration"] for data in aggregate_data],
-        y=[float(data["Avg Waiting Time"]) for data in aggregate_data],
-        name="Avg Waiting Time"
-    ))
-    
-    # Add turnaround time
-    bar_fig.add_trace(go.Bar(
-        x=[data["Configuration"] for data in aggregate_data],
-        y=[float(data["Avg Turnaround Time"]) for data in aggregate_data],
-        name="Avg Turnaround Time"
-    ))
-    
-    # Update layout
-    bar_fig.update_layout(
-        title="Performance Comparison",
-        xaxis_title="Configuration", 
-        yaxis_title="Time",
-        barmode="group",
-        height=400
-    )
+    bar_fig = plot_performance_comparison_bar(aggregate_data)
 
     # Create a visualization of the input processes
     process_fig = plot_input_processes(processes, title="Input Process Set")
     
     # Create results components
-    result_components = [
-        # Input process visualization
-        html.Div([
-            html.H2("Input Process Visualization", className="card-title", style={
-                'color': colors['header'],
-                'marginTop': '0',
-                'marginBottom': '15px',
-                'fontSize': '1.5rem',
-            }),
-            html.P("This chart shows the input processes with their arrival times (triangles) and burst times (horizontal bars):", 
-                   style={'color': colors['light-text'], 'marginBottom': '15px'}),
-            dcc.Graph(figure=process_fig)
-        ], style={**card_style, 'marginBottom': '25px'}),
-    
-        # Bar chart comparing metrics
-        html.Div([
-            html.H2("Performance Metrics Comparison", className="card-title", style={
-                'color': colors['header'],
-                'marginTop': '0',
-                'marginBottom': '15px',
-                'fontSize': '1.5rem',
-            }),
-            dcc.Graph(figure=bar_fig)
-        ], style={**card_style, 'marginBottom': '25px'}),
-        
-        # Table of aggregate statistics
-        html.Div([
-            html.H2("Detailed Statistics", className="card-title", style={
-                'color': colors['header'],
-                'marginTop': '0',
-                'marginBottom': '15px',
-                'fontSize': '1.5rem',
-            }),
-            dash_table.DataTable(
-                id="aggregate-table",
-                columns=[
-                    {"name": "Configuration", "id": "Configuration"},
-                    {"name": "Avg Waiting Time", "id": "Avg Waiting Time"},
-                    {"name": "Avg Turnaround Time", "id": "Avg Turnaround Time"},
-                    {"name": "Throughput", "id": "Throughput"},
-                    {"name": "Completion Time", "id": "Completion Time"}
-                ],
-                data=aggregate_data,
-                style_table={"overflowX": "auto"},
-                style_cell={
-                    "textAlign": "center", 
-                    "padding": "12px",
-                    "fontFamily": '"Roboto", sans-serif',
-                    "backgroundColor": "white",
-                    "fontSize": "14px",
-                    "minWidth": "100px",
-                },
-                style_header={
-                    "backgroundColor": colors['primary'],
-                    "color": "white",
-                    "fontWeight": "bold",
-                    "textAlign": "center",
-                    "padding": "14px",
-                    "fontSize": "15px",
-                    "letterSpacing": "0.5px",
-                },
-                style_data_conditional=[
-                    {
-                        "if": {"row_index": "odd"},
-                        "backgroundColor": "#f9fcff"
-                    },
-                    {
-                        "if": {"state": "selected"},
-                        "backgroundColor": "#e1f5fe",
-                        "border": f"1px solid {colors['primary']}"
-                    }
-                ],
-                tooltip_delay=0,
-                tooltip_duration=None,
-                css=[{
-                    'selector': '.dash-table-tooltip',
-                    'rule': 'background-color: white; font-family: Roboto, sans-serif; color: #37474f; font-size: 14px; padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'
-                }]
-            )
-        ], style={**card_style, 'marginBottom': '25px'}),
+    result_components = get_result_components(process_fig, bar_fig, aggregate_data, results, card_style, colors, processes)
 
-        # Gantt chart section with dropdown
-        html.Div([
-            html.H2("Gantt Chart Visualization", className="card-title", style={
-                'color': colors['header'],
-                'marginTop': '0',
-                'marginBottom': '15px',
-                'fontSize': '1.5rem',
-            }),
-            html.P("Select a configuration to visualize:", style={'marginBottom': '10px', 'color': colors['light-text']}),
-            dcc.Dropdown(
-                id="config-dropdown",
-                options=[
-                    {"label": f"{res['config']['display_name']} ({res['config']['num_cores']} cores)", 
-                     "value": i}
-                    for i, res in enumerate(results)
-                ],
-                value=0,
-                clearable=False,
-                style={
-                    "width": "100%",
-                    "marginBottom": "20px",
-                    "backgroundColor": "#fff",
-                    "borderRadius": "4px",
-                    "border": f"1px solid {colors['border']}",
-                }
-            ),
-            # Gantt chart
-            dcc.Graph(id="gantt-chart")
-        ], style={**card_style, 'marginBottom': '25px'}),
-        
-        # Process timeline visualization
-        html.Div([
-            html.H2("Process Timeline with Waiting Times", className="card-title", style={
-                'color': colors['header'],
-                'marginTop': '0',
-                'marginBottom': '15px',
-                'fontSize': '1.5rem',
-            }),
-            dcc.Graph(id="process-timeline")
-        ], style=card_style),
-        
-        # Store results for use by callbacks
-        dcc.Store(id="simulation-results", data=results),
-        dcc.Store(id="processes-store", data={
-            "processes": [
-                {
-                    "pid": p.pid,
-                    "arrival_time": p.arrival_time,
-                    "burst_time": p.burst_time,
-                    "priority": p.priority
-                }
-                for p in processes
-            ]
-        })
-    ]
-    
     return result_components, html.Div([
         html.I(className="fas fa-check-circle", style={"marginRight": "8px"}),
         f"Simulation completed for {len(processes)} processes with {len(configs)} configurations"
@@ -729,4 +332,4 @@ def update_process_timeline(selected_index, results):
     return plot_process_timeline(dummy_processes, title=title)
 
 if __name__ == "__main__":
-    app.run(debug=True)  
+    app.run(debug=True)

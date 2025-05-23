@@ -1,0 +1,13 @@
+.DS_Store
+__pycache__/cpu.cpython-313.pyc
+__pycache__/stats.cpython-313.pyc
+__pycache__/process_gen.cpython-313.pyc
+schedulers/__pycache__/fcfs.cpython-313.pyc
+schedulers/__pycache__/rr.cpython-313.pyc
+__pycache__/visualizer.cpython-313.pyc
+schedulers/fcfs.py
+__pycache__/cpu_simple.cpython-313.pyc
+__pycache__/simple_cpu.cpython-313.pyc
+schedulers/__pycache__/base.cpython-313.pyc
+schedulers/__pycache__/sjf.cpython-313.pyc
+__pycache__/layout.cpython-313.pyc
